@@ -4,7 +4,6 @@
 This repo is for learning backend fundamentals through hands-on
 
 ## Milestone 1 scope
-List:
 - What is an API
 - REST basics
 - HTTP methods
@@ -25,7 +24,6 @@ List:
 - DELETE /users/{user_id}
 
 ## How to run
-Include:
 1. Create venv
 2. Install requirements
 3. Run uvicorn
