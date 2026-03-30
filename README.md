@@ -1,7 +1,7 @@
 # Backend Concepts Lab
 
 ## Project goal
-Explain that this repo is for learning backend fundamentals through hands-on
+This repo is for learning backend fundamentals through hands-on
 
 ## Milestone 1 scope
 List:
