@@ -1,13 +1,20 @@
 # Backend Concepts Lab
-
 A hands-on backend engineering project demonstrating core concepts such as REST APIs, HTTP methods, authentication, authorization, and data validation using FastAPI.
 
----
+=======
+## Project goal
+This repo is for learning backend fundamentals through hands-on
+
+## Milestone 1 scope
+- What is an API
+- REST basics
+- HTTP methods
+- HTTP status codes
+
 
 ## 🚀 Project Overview
 
 This project is designed to build a strong foundation in backend development by implementing real-world concepts step by step:
-
 * API design and REST principles
 * HTTP methods and status codes
 * JWT (stateless authentication)
@@ -268,3 +275,12 @@ http://127.0.0.1:8000/docs
 Built as part of a hands-on backend engineering learning journey.
 
 ---
+=======
+## How to run
+1. Create venv
+2. Install requirements
+3. Run uvicorn
+
+## What I learned
+In this lab, I learnt what API is. How to create an app using Flask module, implements HTTP methods, better understanding of status code. I created a virtual environment, install needed required packages, and ran the main app using uvicorn which reloads every time I make changes to my codes.
+
