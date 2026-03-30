@@ -1,11 +1,66 @@
 1. GET: It is used to retrieve data in the resource
-    - In the app, GET/users/:
+    - In the project, the endpoint GET/users/:
         - Returns the list of all users.
-        - No changes, no side effects - just reading.
+            -   [
+                    {
+                        "id": 1,
+                        "name": "Alice",
+                        "email": "alice111@learning.com"
+                    },
+                    {
+                        "id": 2,
+                        "name": "Bobby",
+                        "email": "bobby123@learning.com"
+                    }
+                ]
+        -   Status code returned:
+            -   200 OK
+
+        - No changes, no side effects - just reading
+
+    - for endpoint, GET/users/1:
+        - Returned:
+            -   {
+                    "id": 1,
+                    "name": "Alice",
+                    "email": "alice111@learning.com"
+                }
+        
+        -   Status code: 200 Ok
+
+    - for endpoint, GET/users/999:
+        - Returned:
+            -   {
+                    "detail": "User not found"
+                }
+        
+        -   Status code:404 Not Found
 
 2. POST: It is used to create a new resource or an object
-    - In the app, POST/users/:
+    - In this project, POST/users/:
         - Creates a new user in users_db
+        - Returned:
+            -   {
+                    "id":3,
+                    "name":"Charlie",
+                    "email":"charlie@learning.com"
+                }
+
+        - Status code:
+            -   201 Created
+
+    - For a bad request:
+        -   {
+                "id":4,
+                "name":"David"
+            }
+
+        - Returned:
+            -   {
+                    "detail": "id, name, and email are required"
+                }
+
+            -   Status code: 400 Bad Request
 
 3. PUT: It is used to update/modify a resource **completely**
     - In the app, PUT/users/1:
