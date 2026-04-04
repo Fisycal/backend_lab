@@ -1,6 +1,6 @@
 # 🚀 Backend Concepts Lab
 
-A production-style backend engineering project built with **FastAPI** to demonstrate core backend concepts through hands-on implementation, including REST APIs, authentication, authorization, validation, database persistence, environment-based configuration, and schema migrations.
+A production-style backend engineering project built with **FastAPI** to demonstrate core backend concepts through hands-on implementation — including REST APIs, authentication, validation, database persistence, environment configuration, migrations, and containerization.
 
 ---
 
@@ -13,24 +13,26 @@ This project was built incrementally:
 * Milestone 3: Validation with Pydantic
 * Milestone 4: Database integration (SQLAlchemy)
 * Milestone 5: Environment config + Alembic migrations
+* Milestone 6: Docker + Docker Compose + Volume persistence
 
 ---
 
 ## 📌 Overview
 
-This project was created as a practical backend engineering lab to learn and implement real-world backend concepts step by step.
+This project demonstrates how to build a **real-world backend system** step-by-step.
 
-It currently demonstrates:
+Key capabilities:
 
 * RESTful API design
-* HTTP methods and status codes
-* JWT authentication (stateless)
-* Session-based authentication (stateful)
+* JWT (stateless) and session (stateful) authentication
 * Role-based authorization
-* Request validation using Pydantic
-* Persistent data storage using SQLAlchemy + SQLite
+* Input validation using Pydantic
+* Persistent storage using SQLAlchemy + SQLite
 * Environment-based configuration using `.env`
-* Database schema versioning with Alembic
+* Database schema migrations using Alembic
+* Containerization using Docker
+* Multi-container orchestration using Docker Compose
+* Volume-based database persistence
 
 ---
 
@@ -50,22 +52,28 @@ SQLAlchemy ORM
 SQLite Database
         ↑
 Alembic Migrations
+        ↑
+Docker Container
+        ↑
+Docker Compose (with volume)
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-* **Python**
-* **FastAPI**
-* **SQLAlchemy**
-* **SQLite**
-* **Alembic**
-* **Pydantic**
-* **pydantic-settings**
-* **Passlib (bcrypt)** – password hashing
-* **python-jose** – JWT creation and verification
-* **Uvicorn**
+* Python
+* FastAPI
+* SQLAlchemy
+* SQLite
+* Alembic
+* Pydantic
+* pydantic-settings
+* Passlib (bcrypt)
+* python-jose (JWT)
+* Uvicorn
+* Docker
+* Docker Compose
 
 ---
 
@@ -74,27 +82,28 @@ Alembic Migrations
 ```text
 app/
 ├── main.py
-├── config.py                  # Application settings from .env
+├── config.py
 ├── db/
-│   ├── database.py            # Engine, session, Base, DB dependency
-│   └── models.py              # SQLAlchemy models
+│   ├── database.py
+│   └── models.py
 ├── schemas/
-│   ├── user.py                # User request/response schemas
-│   └── auth.py                # Auth request/response schemas
+│   ├── user.py
+│   └── auth.py
 ├── routes/
-│   ├── users.py               # User CRUD routes
-│   └── auth.py                # Auth + protected routes
+│   ├── users.py
+│   └── auth.py
 ├── utils/
-│   ├── jwt_handler.py         # JWT encode/decode logic
-│   ├── password.py            # Password hashing / verification
-│   └── session_store.py       # In-memory session store (learning purpose)
+│   ├── jwt_handler.py
+│   ├── password.py
+│   └── session_store.py
 
 alembic/
-├── env.py                     # Alembic environment config
-├── script.py.mako
-└── versions/                  # Migration files
+├── env.py
+├── versions/
 
 .env.example
+Dockerfile
+docker-compose.yml
 alembic.ini
 requirements.txt
 README.md
@@ -104,33 +113,23 @@ README.md
 
 ## 🔑 Features
 
-### ✅ RESTful User API
+### ✅ RESTful API
 
-| Method  | Endpoint      | Description                     |
-| ------- | ------------- | ------------------------------- |
-| GET     | `/users/`     | Get all users                   |
-| GET     | `/users/{id}` | Get user by ID                  |
-| POST    | `/users/`     | Create user                     |
-| PUT     | `/users/{id}` | Replace user                    |
-| PATCH   | `/users/{id}` | Partially update user           |
-| DELETE  | `/users/{id}` | Delete user                     |
-| HEAD    | `/users/`     | Check collection headers        |
-| HEAD    | `/users/{id}` | Check single user headers       |
-| OPTIONS | `/users/`     | Allowed methods for collection  |
-| OPTIONS | `/users/{id}` | Allowed methods for single user |
+* Full CRUD for users
+* Supports GET, POST, PUT, PATCH, DELETE
+* Includes HEAD and OPTIONS methods
 
 ---
 
 ### 🔐 Authentication
 
-#### JWT Authentication (Stateless)
+#### JWT (Stateless)
 
-* `POST /auth/login-jwt` → returns access token
-* `GET /auth/me-jwt` → current authenticated user
-* `GET /auth/protected-jwt` → protected route
-* `GET /auth/admin-jwt` → admin-only route
+* `POST /auth/login-jwt`
+* `GET /auth/me-jwt`
+* `GET /auth/admin-jwt`
 
-JWT is sent via:
+Uses:
 
 ```text
 Authorization: Bearer <token>
@@ -138,65 +137,32 @@ Authorization: Bearer <token>
 
 ---
 
-#### Session Authentication (Stateful)
+#### Session (Stateful)
 
 * `POST /auth/login-session`
 * `GET /auth/me-session`
 * `POST /auth/logout-session`
 
-Sessions are stored server-side and tracked via cookies.
-
 ---
 
 ### 🛡️ Authorization
 
-Authorization is role-based.
+Role-based access control:
 
-The `admin-jwt` route checks the `role` stored in the JWT payload.
-
-#### Expected behavior
-
-| Scenario                | Result           |
-| ----------------------- | ---------------- |
-| Valid admin token       | 200 OK           |
-| Valid non-admin token   | 403 Forbidden    |
-| Missing token           | 401 Unauthorized |
-| Invalid / expired token | 401 Unauthorized |
+* `admin` → full access
+* `user` → limited access
 
 ---
 
 ## 🗄️ Database
 
-This project uses **SQLite** for development.
-
-### Current user model fields
-
-* `id`
-* `name`
-* `email`
-* `password` (hashed)
-* `role`
-
-User records are persisted in the database and survive application restarts.
+* SQLite (development)
+* SQLAlchemy ORM
+* Data persists across container restarts via volume mount
 
 ---
 
 ## 🔄 Database Migrations (Alembic)
-
-This project uses **Alembic** to manage database schema changes.
-
-### Why Alembic was added
-
-Before Alembic, schema creation depended on `Base.metadata.create_all(...)`, which is okay for early prototyping but not ideal for real projects.
-
-Alembic provides:
-
-* version-controlled schema changes
-* safer database evolution
-* repeatable migration workflow
-* better team/project collaboration
-
-### Migration workflow
 
 Generate migration:
 
@@ -210,19 +176,17 @@ Apply migration:
 alembic upgrade head
 ```
 
-Check current revision:
+Run inside Docker:
 
 ```bash
-alembic current
+docker compose exec app alembic upgrade head
 ```
 
 ---
 
 ## ⚙️ Environment Configuration
 
-Application settings are managed using `.env` and `pydantic-settings`.
-
-### Example `.env.example`
+`.env` controls runtime settings:
 
 ```env
 DATABASE_URL=sqlite:///./test.db
@@ -231,152 +195,104 @@ ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```
 
-### Why this matters
-
-This prevents hardcoded secrets and makes the app easier to configure across environments.
-
-Used for:
-
-* database connection URL
-* JWT secret key
-* JWT algorithm
-* token expiration time
+Never commit `.env` to GitHub.
 
 ---
 
-## 🔐 Security
+## 🐳 Running with Docker Compose
 
-* Passwords are hashed using **bcrypt**
-* JWT secrets are loaded from environment variables
-* Passwords are never returned in API responses
-* Admin access is controlled via user roles
-* Session cookies are `httponly`
+### 1. Build and start
+
+```bash
+docker compose up --build
+```
 
 ---
 
-## ✅ Validation
-
-This project uses **Pydantic** models for request and response validation.
-
-Validation examples include:
-
-* required fields
-* valid email format
-* password minimum length
-* structured request bodies
-
-Typical validation error:
+### 2. Access the app
 
 ```text
-422 Unprocessable Entity
+http://localhost:8001/docs
 ```
 
----
-
-## 🌐 Important Backend Concepts Demonstrated
-
-### Authentication vs Authorization
-
-* **Authentication** → verifies identity
-* **Authorization** → checks permissions
-
-### Stateless vs Stateful
-
-| Type    | Description                     |
-| ------- | ------------------------------- |
-| JWT     | Stateless; client carries token |
-| Session | Stateful; server stores session |
-
-### HTTP Status Codes Used
-
-| Code | Meaning          |
-| ---- | ---------------- |
-| 200  | OK               |
-| 201  | Created          |
-| 204  | No Content       |
-| 400  | Bad Request      |
-| 401  | Unauthorized     |
-| 403  | Forbidden        |
-| 404  | Not Found        |
-| 422  | Validation Error |
-
----
-
-## 📸 Screenshots
-
-### Swagger UI
-
-<img src="screenshots/swagger-home.png" width="800"/>
-
-### JWT Login
-
-<img src="screenshots/jwt-login.png" width="800"/>
-
-### Authenticated User
-
-<img src="screenshots/me-jwt.png" width="800"/>
-
-### Admin Authorization
-
-<img src="screenshots/admin-route.png" width="800"/>
-
----
-
-## 🧪 How to Run the Project
-
-### 1. Clone the repository
-
-```bash
-git clone <your-repo-url>
-cd backend-core-concepts
-```
-
-### 2. Create and activate virtual environment
-
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-### 3. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Create `.env`
-
-Copy `.env.example` to `.env` and provide your values.
-
-### 5. Apply migrations
-
-```bash
-alembic upgrade head
-```
-
-### 6. Run the app
-
-```bash
-uvicorn app.main:app --reload
-```
-
-### 7. Open API docs
+Health check:
 
 ```text
-http://127.0.0.1:8000/docs
+http://localhost:8001/health
+```
+
+---
+
+### 3. Run migrations (first time)
+
+```bash
+docker compose exec app alembic upgrade head
+```
+
+---
+
+### 4. Stop the app
+
+```bash
+docker compose down
+```
+
+---
+
+## 📦 Volume Persistence
+
+Docker Compose uses:
+
+```yaml
+volumes:
+  - .:/app
+```
+
+This ensures:
+
+* SQLite database persists locally
+* data survives container restarts
+* development workflow is faster
+
+---
+
+## 🧪 Example Workflow
+
+1. Start app:
+
+```bash
+docker compose up
+```
+
+2. Create user via Swagger
+
+3. Stop app:
+
+```bash
+docker compose down
+```
+
+4. Restart:
+
+```bash
+docker compose up
+```
+
+5. Verify user still exists:
+
+```text
+GET /users/
 ```
 
 ---
 
 ## ❤️ Health Check
 
-A simple health endpoint is available:
-
 ```text
 GET /health
 ```
 
-Expected response:
+Response:
 
 ```json
 {
@@ -386,44 +302,50 @@ Expected response:
 
 ---
 
+## 🔐 Security
+
+* Passwords hashed with bcrypt
+* JWT secret stored in `.env`
+* Role-based authorization enforced
+* Session cookies are HTTP-only
+
+---
+
 ## ⚠️ Known Limitations
 
-* SQLite is used for development only
-* Session storage is in-memory and not shared across instances
-* No refresh token workflow yet
-* No background jobs or async task queue yet
-* No Docker/deployment setup yet
+* SQLite is used (not production-grade DB)
+* Session storage is in-memory
+* No refresh token support yet
+* No CI/CD pipeline yet
 
 ---
 
 ## 🚀 Future Improvements
 
-* Docker support
 * PostgreSQL integration
-* Redis-backed sessions
-* Refresh tokens
-* Role management improvements
-* Deployment to Render / Railway / AWS
+* Redis for session storage
+* Refresh token implementation
+* Deployment (Render / Railway / AWS)
 * CI/CD pipeline
-* Automated tests expansion
+* Automated tests
 
 ---
 
 ## 🧠 Key Learnings
 
-This project helped reinforce:
-
-* building RESTful APIs from scratch
-* proper use of HTTP methods and status codes
-* request and response validation
-* password hashing and JWT-based auth
-* session-based auth comparison
-* environment-based configuration
-* schema migrations with Alembic
-* debugging real backend errors across auth, DB, and config
+* REST API design and HTTP methods
+* Authentication vs Authorization
+* Stateless vs Stateful systems
+* Schema validation with Pydantic
+* ORM usage with SQLAlchemy
+* Database migrations with Alembic
+* Environment-based configuration
+* Docker containerization
+* Docker Compose orchestration
+* Volume-based persistence
 
 ---
 
 ## 👨‍💻 Author
 
-Backend engineering learning project built with a focus on practical implementation, production mindset, and long-term portfolio value.
+Backend engineering learning project built with a focus on real-world systems, production mindset, and hands-on implementation.
