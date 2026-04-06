@@ -8,12 +8,24 @@ from app.config import settings
 
 from fastapi.middleware.cors import CORSMiddleware
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format=%(asctime)s | %(levelname)s |%(name)s | %(message)s"
+)
+
+logger = logging.getLogger(__name__)
+
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description=settings.APP_DESCRIPTION,
     debug=settings.DEBUG,
 )
+
+logger.info("Starting %s in %s mode", settings.APP_NAME, settings.ENVIRONMENT)
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,6 +41,7 @@ app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
 @app.get("/")
 def root():
+    logger.info("Root endpoint accessed")
     return {
         "message": f"{settings.APP_NAME} is running",
         "docs": "/docs",
@@ -40,12 +53,15 @@ def root():
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
+    logger.info("Health check endpoint accessed")
     db_status = "ok"
 
     try:
         db.execute(text("SELECT 1"))
-    except Exception:
+        logger.info("Database health check passed")
+    except Exception as e:
         db_status = "error"
+        logger.info("Database health check failed: %s, e")
 
     return {
         "status": "ok" if db_status == "ok" else "degraded",
