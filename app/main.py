@@ -45,7 +45,7 @@ app.add_middleware(
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    request_id = str(uuid.uuid64())
+    request_id = str(uuid.uuid4())
     start_time = time.time()
 
     logger.info(
