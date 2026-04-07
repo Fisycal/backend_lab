@@ -75,7 +75,7 @@ async def log_requests(request: Request, call_next):
     )
 
     response.headers["X-Request-ID"] = request_id
-    response.headers["X-Process=Time-ms"] = f"{process_time:.2f}"
+    response.headers["X-Process-Time-ms"] = f"{process_time:.2f}"
 
     return response
 
