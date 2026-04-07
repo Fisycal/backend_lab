@@ -13,6 +13,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import logging
 
+import time
+import uuid
+
+
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s |%(name)s | %(message)s"
@@ -37,6 +42,42 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    request_id = str(uuid.uuid64())
+    start_time = time.time()
+
+    logger.info(
+        "REQUEST START | id=%s | method=%s | path=%s",
+        request_id,
+        request.method,
+        request.url.path,
+    )
+
+    try:
+        response = await call_next(request)
+    except Exception as e:
+        logger.exception(
+            "REQUEST ERROR | id=%s | error=%s",
+            request_id,
+            str(e)
+        )
+        raise
+
+    process_time = (time.time() - start_time) * 1000
+
+    logger.info(
+        "REQUEST END | id=%s | status=%s | duration=%.2fms",
+        request_id,
+        response.status_code,
+        process_time
+    )
+
+    response.headers["X-Request-ID"] = request_id
+    response.headers["X-Process=Time-ms"] = f"{process_time:.2f}"
+
+    return response
 
 
 app.include_router(users.router, prefix="/users", tags=["Users"])
