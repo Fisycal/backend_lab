@@ -26,6 +26,37 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def validate_startup_settings() -> None:
+    required_settings = {
+        "DATABASE_URL": settings.DATABASE_URL,
+        "SECRET_KEY": settings.SECRET_KEY,
+        "APP_NAME": settings.APP_NAME,
+        "APP_VERSION": settings.APP_VERSION,
+        "ENVIRONMENT": settings.ENVIRONMENT,
+    }
+
+    missing_settings = [
+        key for key, value in required_settings.items()
+        if value is None or (isinstance(value, str) and not value.strip())
+    ]
+
+    if missing_settings:
+        message = f"Missing required settings: {', '.join(missing_settings)}"
+        logger.critical(message)
+        raise RuntimeError(message)
+
+    allowed_environments = {"development", "production", "test"}
+    if settings.ENVIRONMENT not in allowed_environments:
+        message = (
+            f"Invalid ENVIRONMENT '{settings.ENVIRONMENT}'. "
+            f"Expected one of: {', '.join(sorted(allowed_environments))}"
+        )
+        logger.critical(message)
+        raise RuntimeError(message)
+
+    logger.info("Startup settings validation passed")
+
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -34,6 +65,8 @@ app = FastAPI(
 )
 
 logger.info("Starting %s in %s mode", settings.APP_NAME, settings.ENVIRONMENT)
+validate_startup_settings() # To quickly determine if startup and/or environment variables are missing
+
 
 app.add_middleware(
     CORSMiddleware,
