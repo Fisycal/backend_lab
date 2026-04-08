@@ -4,6 +4,8 @@ from sqlalchemy import text
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app.routes import users, auth
 from app.db.database import get_db
@@ -67,6 +69,12 @@ app = FastAPI(
 logger.info("Starting %s in %s mode", settings.APP_NAME, settings.ENVIRONMENT)
 validate_startup_settings() # To quickly determine if startup and/or environment variables are missing
 
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
+
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.ALLOWED_HOSTS or ["*"]
+)
 
 app.add_middleware(
     CORSMiddleware,

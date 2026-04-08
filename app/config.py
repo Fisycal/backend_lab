@@ -16,6 +16,7 @@ class Settings(BaseSettings):
 
     API_PREFIX: str = ""
     ALLOWED_ORIGINS: list[str] = []
+    ALLOWED_HOSTS: list[str] = ["*"]
 
     model_config = SettingsConfigDict(
         env_file=".env",
