@@ -21,7 +21,6 @@ import time
 import uuid
 
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s |%(name)s | %(message)s"
@@ -199,22 +198,75 @@ def root():
     }
 
 
+
+# Liveness: app is running
+@app.get("/health/live")
+def live_check():
+    logger.info("Liveness check endpoint accessed")
+
+    return {
+        "status": "alive",
+        "service": settings.APP_NAME,
+        "environment": settings.ENVIRONMENT,
+        "version": settings.APP_VERSION,
+    }
+
+
+# Readiness: app + database are ready
+@app.get("/health/ready")
+def ready_check(db: Session = Depends(get_db)):
+    logger.info("Readiness check endpoint accessed")
+
+    try:
+        db.execute(text("SELECT 1"))
+        logger.info("Database readiness check passed")
+
+        return {
+            "status": "ready",
+            "service": settings.APP_NAME,
+            "environment": settings.ENVIRONMENT,
+            "version": settings.APP_VERSION,
+            "database": "ok",
+        }
+
+    except Exception as e:
+        logger.error("Database readiness check failed: %s", e)
+
+        return {
+            "status": "not_ready",
+            "service": settings.APP_NAME,
+            "environment": settings.ENVIRONMENT,
+            "version": settings.APP_VERSION,
+            "database": "error",
+        }
+    
+# Combined health endpoint    
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
     logger.info("Health check endpoint accessed")
-    db_status = "ok"
 
     try:
         db.execute(text("SELECT 1"))
         logger.info("Database health check passed")
-    except Exception as e:
-        db_status = "error"
-        logger.info("Database health check failed: %s, e")
 
-    return {
-        "status": "ok" if db_status == "ok" else "degraded",
-        "service": settings.APP_NAME,
-        "environment": settings.ENVIRONMENT,
-        "version": settings.APP_VERSION,
-        "database": db_status,
-    }
+        return {
+            "status": "ok",
+            "service": settings.APP_NAME,
+            "environment": settings.ENVIRONMENT,
+            "version": settings.APP_VERSION,
+            "database": "ok",
+        }
+
+    except Exception as e:
+        logger.error("Database health check failed: %s", e)
+
+        raise StarletteHTTPException(
+            status_code=503,
+            detail={
+                "status": "degraded",
+                "service": settings.APP_NAME,
+                "environment": settings.ENVIRONMENT,
+                "version": settings.APP_VERSION,
+                "database": "error",
+            },
+        )
