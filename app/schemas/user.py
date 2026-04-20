@@ -1,9 +1,10 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 # Shared fields for user data.
 class UserBase(BaseModel):
     name: str
     email: EmailStr
+    role: str
 
 # Creating a new user.
 class UserCreate(UserBase):
@@ -23,7 +24,6 @@ class UserUpdate(BaseModel):
 # For sending user data back to the client.
 class UserResponse(UserBase):
     id: int
-
-    class Config:
-        from_attributes = True
+    role: str
+    model_config = ConfigDict(from_attributes=True)
 

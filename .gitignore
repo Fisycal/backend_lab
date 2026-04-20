@@ -4,3 +4,4 @@ __pycache__/
 .env
 README_.md
 test.db
+README_detailed.md

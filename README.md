@@ -1,6 +1,9 @@
 # Backend Concepts Lab
 
-A production-style backend engineering project built with **FastAPI** to demonstrate core backend concepts through hands-on implementation — including REST APIs, authentication, validation, database persistence, environment configuration, migrations, containerization, deployment, and production hardening.
+[![CI](https://github.com/Fisycal/backend_lab/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Fisycal/backend_lab/actions/workflows/ci.yml)
+![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)
+
+A production-style backend engineering project built with FastAPI to demonstrate core backend concepts through hands-on implementation — including REST APIs, authentication, validation, database persistence, environment configuration, migrations, containerization, deployment, production hardening, system reliability, and automated testing.
 
 ---
 
@@ -14,14 +17,16 @@ This project was built incrementally:
 * Milestone 4: Database integration (SQLAlchemy)
 * Milestone 5: Environment config + Alembic migrations
 * Milestone 6: Docker + Docker Compose + Volume persistence
-* **Milestone 7: Deployment (Render)**
-* **Milestone 8: Production Hardening (Observability, Security, Reliability)**
+* Milestone 7: Deployment (Render)
+* Milestone 8: Production Hardening (Observability, Security, Reliability)
+* Milestone 9: Database Reliability and Health Checks
+* Milestone 10: Automated Testing and CI/CD
 
 ---
 
 ## Overview
 
-This project demonstrates how to build a **real-world backend system** step-by-step — from local development to production deployment.
+This project demonstrates how to build a real-world backend system step-by-step — from local development to production deployment.
 
 Key capabilities:
 
@@ -39,12 +44,14 @@ Key capabilities:
 * Observability (logging, request tracing)
 * Production-grade error handling
 * Security hardening and middleware
+* Database reliability and health monitoring
+* Automated testing and continuous integration
 
 ---
 
 ## Architecture
 
-```text
+```
 Client (Swagger / Postman / Frontend)
         ↓
 FastAPI Routes
@@ -73,7 +80,7 @@ Render (production deployment)
 * Python
 * FastAPI
 * SQLAlchemy
-* SQLite (dev)
+* SQLite (development and testing)
 * PostgreSQL (production-ready)
 * Alembic
 * Pydantic + pydantic-settings
@@ -82,13 +89,14 @@ Render (production deployment)
 * Uvicorn
 * Docker
 * Docker Compose
+* GitHub Actions (CI/CD)
 * Render (deployment)
 
 ---
 
 ## Project Structure
 
-```text
+```
 app/
 ├── main.py
 ├── config.py
@@ -105,6 +113,12 @@ app/
 │   ├── jwt_handler.py
 │   ├── password.py
 │   └── session_store.py
+
+tests/
+├── conftest.py
+├── test_users.py
+├── test_auth.py
+├── test_health.py
 
 alembic/
 ├── env.py
@@ -134,23 +148,22 @@ README.md
 
 ### JWT (Stateless)
 
-* `POST /auth/login-jwt`
-* `GET /auth/me-jwt`
-* `GET /auth/admin-jwt`
+* POST /auth/login-jwt
+* GET /auth/me-jwt
+* GET /auth/protected-jwt
+* GET /auth/admin-jwt
 
 Uses:
 
-```
 Authorization: Bearer <token>
-```
 
 ---
 
 ### Session (Stateful)
 
-* `POST /auth/login-session`
-* `GET /auth/me-session`
-* `POST /auth/logout-session`
+* POST /auth/login-session
+* GET /auth/me-session
+* POST /auth/logout-session
 
 ---
 
@@ -158,294 +171,77 @@ Authorization: Bearer <token>
 
 Role-based access control:
 
-* `admin` → full access
-* `user` → limited access
+* admin → full access
+* user → limited access
 
 ---
 
 # Database
 
-* SQLite (development)
+* SQLite (development and testing)
 * SQLAlchemy ORM
 * Alembic migrations
 * Ready for PostgreSQL in production
 
 ---
 
-# Database Migrations (Alembic)
+# Milestone 9 — Database Reliability and Health Checks
 
-Generate migration:
+## Database Reliability
 
-```bash
-alembic revision --autogenerate -m "create users table"
-```
+* Enabled pool_pre_ping in SQLAlchemy
+* Detects stale connections
+* Prevents runtime failures
 
-Apply migration:
+## Health Endpoints
 
-```bash
-alembic upgrade head
-```
-
-Run inside Docker:
-
-```bash
-docker compose exec app alembic upgrade head
-```
+GET /health/live → Application running  
+GET /health/ready → App + DB ready  
+GET /health → Combined health  
 
 ---
 
-# Environment Configuration
+# Milestone 10 — Automated Testing and CI/CD
 
-`.env` controls runtime settings:
+## Testing
 
-```env
-DATABASE_URL=sqlite:///./test.db
-SECRET_KEY=your_secret_key_here
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
-```
+* pytest framework
+* FastAPI TestClient
+* isolated SQLite test database
+* dependency override (get_db)
 
-Additional production settings:
+## Coverage
 
-```env
-APP_NAME=Backend Concepts Lab
-APP_VERSION=1.0.0
-ENVIRONMENT=development
-DEBUG=true
-ALLOWED_ORIGINS=["http://localhost:3000"]
-ALLOWED_HOSTS=["*"]
-DOCS_ENABLED=true
-```
+* 48+ tests
+* 92% total coverage
+* near 100% route coverage
 
-Never commit `.env` to GitHub.
+## CI/CD
 
----
-
-# Running with Docker Compose
-
-### 1. Build and start
-
-```bash
-docker compose up --build
-```
-
----
-
-### 2. Access the app
-
-```
-http://localhost:8001/docs
-```
-
-Health check:
-
-```
-http://localhost:8001/health
-```
-
----
-
-### 3. Run migrations
-
-```bash
-docker compose exec app alembic upgrade head
-```
-
----
-
-### 4. Stop
-
-```bash
-docker compose down
-```
-
----
-
-# Volume Persistence
-
-Ensures:
-
-* database persists locally
-* data survives container restarts
-* faster development workflow
-
----
-
-# Milestone 7 — Deployment
-
-The backend is deployed to production using Render.
-
-### Live API
-
-* Root: `/`
-* Health: `/health`
-* Docs: `/docs`
-
-### Deployment Features
-
-* Public API access
-* Environment variables managed in Render
-* Production-ready configuration
-* Database connection via environment
-
----
-
-# Milestone 8 — Production Hardening
-
-This milestone upgrades the backend to **production-grade reliability and observability**.
-
----
-
-## Structured Logging
-
-* Standardized log format
-* Endpoint-level logging
-* Database health logs
-* Clear logs in Render
-
----
-
-## Request Tracing
-
-Each request includes:
-
-* Unique Request ID
-* Execution time tracking
-
-Response headers:
-
-```
-X-Request-ID
-X-Process-Time-ms
-```
-
----
-
-## Global Error Handling
-
-Unified error responses:
-
-```json
-{
-  "status": "error",
-  "error": {
-    "type": "validation_error",
-    "message": "Request validation failed"
-  }
-}
-```
-
----
-
-## Startup Validation
-
-Application validates critical config at startup:
-
-* DATABASE_URL
-* SECRET_KEY
-* ENVIRONMENT
-
-Fails fast if missing.
-
----
-
-## CORS Configuration
-
-* Controlled via `ALLOWED_ORIGINS`
-* Supports frontend integration
-* Secure defaults
-
----
-
-## Security Hardening
-
-### Response Headers
-
-```
-X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
-Referrer-Policy: no-referrer
-```
-
----
-
-### Health Endpoint Protection
-
-```
-Cache-Control: no-store
-```
-
----
-
-### Docs Control
-
-Swagger/ReDoc configurable:
-
-```env
-DOCS_ENABLED=false
-```
-
----
-
-## Proxy & Host Hardening
-
-* Trusted host validation
-* Proxy-aware request handling
-* Accurate client IP detection
-
----
-
-# Health Check
-
-```
-GET /health
-```
-
-Response:
-
-```json
-{
-  "status": "ok"
-}
-```
+* GitHub Actions runs tests on push and PR
+* coverage threshold enforced
+* deployment integrated with Render
 
 ---
 
 # Known Limitations
 
-* SQLite used for development
+* SQLite used for development and testing
 * Session storage is in-memory
 * No refresh tokens yet
-* No CI/CD pipeline yet
 
 ---
 
 # Future Improvements
 
-* PostgreSQL production integration
-* Redis for session storage
-* Refresh token system
-* CI/CD pipeline
-* Automated testing
+* PostgreSQL optimization
+* Redis session storage
+* Refresh tokens
+* Advanced monitoring
 * Frontend integration
-
----
-
-# Key Learnings
-
-* REST API design
-* Authentication vs Authorization
-* Stateless vs Stateful systems
-* ORM with SQLAlchemy
-* Alembic migrations
-* Docker & Compose
-* Deployment to production
-* Logging and observability
-* Error handling patterns
-* Security best practices
 
 ---
 
 # Author
 
-Backend engineering learning project focused on **real-world systems, production mindset, and hands-on implementation**.
+Backend engineering learning project focused on real-world systems, production mindset, and hands-on implementation.
