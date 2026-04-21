@@ -1,7 +1,7 @@
 # Backend Concepts Lab
 
 [![CI](https://github.com/Fisycal/backend_lab/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Fisycal/backend_lab/actions/workflows/ci.yml)
-![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-94%25-brightgreen)
 
 A production-style backend engineering project built with FastAPI to demonstrate core backend concepts through hands-on implementation — including REST APIs, authentication, validation, database persistence, environment configuration, migrations, containerization, deployment, production hardening, system reliability, and automated testing.
 
