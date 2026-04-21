@@ -1,4 +1,3 @@
-# app/services/user_service.py
 from typing import Sequence, Optional
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
