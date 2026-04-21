@@ -1,48 +1,35 @@
-import uuid
-from fastapi import APIRouter, HTTPException, Header, Response, Cookie, Depends
+from fastapi import APIRouter, HTTPException, Response, Cookie, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from sqlalchemy.orm import Session
-from app.db.database import get_db
-from app.db.models import User
-from app.utils.password import verify_password
-from app.utils.jwt_handler import create_access_token, verify_access_token
-from app.utils.session_store import sessions
-
 from app.schemas.auth import LoginRequest, TokenResponse, MessageResponse
+from app.services.auth_service import AuthService
+from app.api.deps.auth_dependencies import get_auth_service
 
 
 router = APIRouter()
 security = HTTPBearer()
 
-# JWT login route
+
 @router.post("/login-jwt", response_model=TokenResponse)
-def login_jwt(credentials: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == credentials.email).first()
+def login_jwt(
+    credentials: LoginRequest,
+    service: AuthService = Depends(get_auth_service)
+):
+    result = service.login_jwt(credentials.email, credentials.password)
 
-    if not user:
+    if not result:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if not verify_password(credentials.password, user.password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    token = create_access_token({
-        "sub": user.email,
-        "role": user.role,
-        "user_id": user.id
-    })
-
-    return {
-        "access_token": token,
-        "token_type": "bearer"
-    }
+    return result
 
 
-# Route for JWT
 @router.get("/me-jwt")
-def get_me_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def get_me_jwt(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    service: AuthService = Depends(get_auth_service)
+):
     token = credentials.credentials
-    payload = verify_access_token(token)
+    payload = service.verify_jwt_user(token)
 
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
@@ -53,40 +40,37 @@ def get_me_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
     }
 
 
-# Session login route
 @router.post("/login-session", response_model=MessageResponse)
-def login_session(credentials: LoginRequest, response: Response, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == credentials.email).first()
+def login_session(
+    credentials: LoginRequest,
+    response: Response,
+    service: AuthService = Depends(get_auth_service)
+):
+    result = service.login_session(credentials.email, credentials.password)
 
-    if not user or not verify_password(credentials.password, user.password):
+    if not result:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    session_id = str(uuid.uuid4())
-
-    sessions[session_id] = {
-        "user_id": user.id,
-        "email": user.email,
-        "role": user.role
-    }
 
     response.set_cookie(
         key="session_id",
-        value=session_id,
+        value=result["session_id"],
         httponly=True
     )
 
-    return {"message": "Logged in with session"}
+    return {"message": result["message"]}
 
 
-# Route for session
 @router.get("/me-session")
-def get_me_session(session_id: str = Cookie(None)):
-    if not session_id:
+def get_me_session(
+    session_id: str = Cookie(None),
+    service: AuthService = Depends(get_auth_service)
+):
+    session_data = service.get_session_user(session_id)
+
+    if session_data == "missing":
         raise HTTPException(status_code=401, detail="No session cookie found")
 
-    session_data = sessions.get(session_id)
-
-    if not session_data:
+    if session_data == "invalid":
         raise HTTPException(status_code=401, detail="Invalid session")
 
     return {
@@ -95,21 +79,24 @@ def get_me_session(session_id: str = Cookie(None)):
     }
 
 
-# Logout session
 @router.post("/logout-session", response_model=MessageResponse)
-def logout_session(response: Response, session_id: str = Cookie(None)):
-    if session_id and session_id in sessions:
-        del sessions[session_id]
-
+def logout_session(
+    response: Response,
+    session_id: str = Cookie(None),
+    service: AuthService = Depends(get_auth_service)
+):
+    result = service.logout_session(session_id)
     response.delete_cookie("session_id")
-    return {"message": "Logged out from session"}
+    return result
 
 
-# Protected route using JWT
 @router.get("/protected-jwt")
-def protected_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def protected_jwt(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    service: AuthService = Depends(get_auth_service)
+):
     token = credentials.credentials
-    payload = verify_access_token(token)
+    payload = service.verify_jwt_user(token)
 
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
@@ -117,16 +104,18 @@ def protected_jwt(credentials: HTTPAuthorizationCredentials = Depends(security))
     return {"message": "You are authenticated", "user": payload}
 
 
-# Admin-only route using JWT
 @router.get("/admin-jwt")
-def admin_jwt(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def admin_jwt(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    service: AuthService = Depends(get_auth_service)
+):
     token = credentials.credentials
-    payload = verify_access_token(token)
+    payload = service.verify_jwt_user(token)
 
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    if payload.get("role") != "admin":
+    if not service.is_admin(payload):
         raise HTTPException(status_code=403, detail="Forbidden")
 
     return {
