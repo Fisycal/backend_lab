@@ -12,6 +12,7 @@ from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from app.routes import users, auth
 from app.db.database import get_db
 from app.config import settings
+from app.core.exception_handler import register_exception_handlers
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -66,6 +67,8 @@ app = FastAPI(
     description=settings.APP_DESCRIPTION,
     debug=settings.DEBUG,
 )
+
+register_exception_handlers(app)
 
 logger.info("Starting %s in %s mode", settings.APP_NAME, settings.ENVIRONMENT)
 validate_startup_settings() # To quickly determine if startup and/or environment variables are missing

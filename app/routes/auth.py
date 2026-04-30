@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Response, Cookie, Depends
+from fastapi import APIRouter, Response, Cookie, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.schemas.auth import LoginRequest, TokenResponse, MessageResponse
@@ -15,12 +15,7 @@ def login_jwt(
     credentials: LoginRequest,
     service: AuthService = Depends(get_auth_service)
 ):
-    result = service.login_jwt(credentials.email, credentials.password)
-
-    if not result:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
-    return result
+    return service.login_jwt(credentials.email, credentials.password)
 
 
 @router.get("/me-jwt")
@@ -28,12 +23,7 @@ def get_me_jwt(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     service: AuthService = Depends(get_auth_service)
 ):
-    token = credentials.credentials
-    payload = service.verify_jwt_user(token)
-
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
+    payload = service.verify_token(credentials.credentials)
     return {
         "message": "Authenticated with JWT",
         "user": payload
@@ -47,9 +37,6 @@ def login_session(
     service: AuthService = Depends(get_auth_service)
 ):
     result = service.login_session(credentials.email, credentials.password)
-
-    if not result:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
 
     response.set_cookie(
         key="session_id",
@@ -65,14 +52,7 @@ def get_me_session(
     session_id: str = Cookie(None),
     service: AuthService = Depends(get_auth_service)
 ):
-    session_data = service.get_session_user(session_id)
-
-    if session_data == "missing":
-        raise HTTPException(status_code=401, detail="No session cookie found")
-
-    if session_data == "invalid":
-        raise HTTPException(status_code=401, detail="Invalid session")
-
+    session_data = service.get_session_data(session_id)
     return {
         "message": "Authenticated with session",
         "user": session_data
@@ -95,12 +75,7 @@ def protected_jwt(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     service: AuthService = Depends(get_auth_service)
 ):
-    token = credentials.credentials
-    payload = service.verify_jwt_user(token)
-
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
+    payload = service.verify_token(credentials.credentials)
     return {"message": "You are authenticated", "user": payload}
 
 
@@ -109,15 +84,8 @@ def admin_jwt(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     service: AuthService = Depends(get_auth_service)
 ):
-    token = credentials.credentials
-    payload = service.verify_jwt_user(token)
-
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
-    if not service.is_admin(payload):
-        raise HTTPException(status_code=403, detail="Forbidden")
-
+    payload = service.verify_token(credentials.credentials)
+    service.require_admin(payload)
     return {
         "message": "Welcome Admin",
         "user": payload

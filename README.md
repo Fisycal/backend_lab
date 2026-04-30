@@ -21,6 +21,7 @@ This project was built incrementally:
 * Milestone 8: Production Hardening (Observability, Security, Reliability)
 * Milestone 9: Database Reliability and Health Checks
 * Milestone 10: Automated Testing and CI/CD
+* Milestone 11: Service Layer, Repository Pattern & Centralized Error Handling
 
 ---
 
