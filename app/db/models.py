@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean
 from app.db.database import Base
 
 class User(Base):
@@ -12,3 +12,6 @@ class User(Base):
     # user authentication and authorization
     password = Column(String, nullable=False)
     role = Column(String, default="user")
+
+    # admin 
+    is_admin = Column(Boolean, default=False, nullable=False)

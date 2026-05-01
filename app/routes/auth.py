@@ -5,8 +5,10 @@ from app.schemas.auth import LoginRequest, TokenResponse, MessageResponse
 from app.services.auth_service import AuthService
 from app.api.deps.auth_dependencies import get_auth_service
 
+from app.db.models import User 
+from app.dependencies.auth import require_authenticated_user, require_admin
 
-router = APIRouter()
+router = APIRouter(tags=["Auth"])
 security = HTTPBearer()
 
 
@@ -20,13 +22,11 @@ def login_jwt(
 
 @router.get("/me-jwt")
 def get_me_jwt(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    service: AuthService = Depends(get_auth_service)
+    current_user: User = Depends(require_authenticated_user),
 ):
-    payload = service.verify_token(credentials.credentials)
     return {
         "message": "Authenticated with JWT",
-        "user": payload
+        "user": current_user,
     }
 
 
@@ -81,12 +81,9 @@ def protected_jwt(
 
 @router.get("/admin-jwt")
 def admin_jwt(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    service: AuthService = Depends(get_auth_service)
+    current_user=Depends(require_admin),
 ):
-    payload = service.verify_token(credentials.credentials)
-    service.require_admin(payload)
     return {
         "message": "Welcome Admin",
-        "user": payload
+        "user": current_user,
     }
