@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from typing import List
 
 # Shared fields for user data.
 class UserBase(BaseModel):
@@ -26,4 +27,11 @@ class UserResponse(UserBase):
     id: int
     role: str
     model_config = ConfigDict(from_attributes=True)
+
+class PaginatedUserResponse(BaseModel):
+    items: List[UserResponse]
+    total: int
+    page: int
+    size: int
+    pages: int
 

@@ -3,6 +3,7 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.user import UserCreate, UserReplace, UserUpdate
 from app.utils.password import hash_password
 from app.core.exceptions import UserNotFoundError, UserAlreadyExistsError, ValidationError
+from starlette.exceptions import HTTPException
 
 
 class UserService:
@@ -54,22 +55,24 @@ class UserService:
 
         return self.repo.save(user)
 
-    def update_user(self, user_id: int, updates: UserUpdate):
+    def patch_user(self, user_id: int, user_update: UserUpdate):
         user = self.repo.get_by_id(user_id)
+
         if not user:
             raise UserNotFoundError("User not found")
 
-        update_data = updates.model_dump(exclude_unset=True)
+        updates = user_update.model_dump(exclude_unset=True)
 
-        if "email" in update_data:
-            email_owner = self.repo.get_by_email_excluding_user(update_data["email"], user_id)
+        if "email" in updates:
+            email_owner = self.repo.get_by_email_excluding_user(updates["email"], user_id)
             if email_owner:
                 raise UserAlreadyExistsError("Email already exists")
 
-        for field, value in update_data.items():
-            setattr(user, field, value)
+        for key, value in updates.items():
+            setattr(user, key, value)
 
         return self.repo.save(user)
+    
 
     def delete_user(self, user_id: int):
         user = self.repo.get_by_id(user_id)
@@ -93,3 +96,29 @@ class UserService:
         if not user:
             raise UserNotFoundError("User not found")
         return user
+    
+    def get_users_paginated(
+        self,
+        page: int = 1,
+        size: int = 10,
+        role: str | None = None,
+        email: str | None = None,
+        search: str | None = None,
+    ):
+        skip = (page - 1) * size
+
+        users, total = self.repo.get_paginated_users(
+            skip=skip,
+            limit=size,
+            role=role,
+            email=email,
+            search=search,
+        )
+
+        return {
+            "items": users,
+            "total": total,
+            "page": page,
+            "size": size,
+            "pages": (total + size - 1) // size,
+        }

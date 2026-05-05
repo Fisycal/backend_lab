@@ -10,7 +10,7 @@ from app.core.exceptions import AppException
 from app.services.auth_service import AuthService
 from app.api.deps.auth_dependencies import get_auth_service
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login-jwt")
+#oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login-jwt")
 security = HTTPBearer()
 
 def get_current_user(
@@ -36,3 +36,21 @@ def require_admin(
         )
 
     return current_user
+
+from fastapi import HTTPException, status
+
+
+def require_owner_or_admin(
+    current_user: dict,
+    resource_user_id: int,
+):
+    is_admin = current_user.get("role") == "admin"
+    is_owner = current_user.get("user_id") == resource_user_id
+
+    if not is_admin and not is_owner:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden",
+        )
+
+    return True

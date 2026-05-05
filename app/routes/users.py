@@ -1,19 +1,42 @@
-from fastapi import APIRouter, Response, status, Depends, HTTPException
+from fastapi import APIRouter, Response, status, Depends, HTTPException, Query
 
-from app.schemas.user import UserCreate, UserReplace, UserUpdate, UserResponse
+from app.schemas.user import UserCreate, UserReplace, UserUpdate, UserResponse, PaginatedUserResponse
 from app.services.user_service import UserService
 from app.api.deps.user_dependencies import get_user_service
+
+from app.dependencies.auth import require_authenticated_user, require_owner_or_admin, require_admin
+
+from typing import Optional
 
 router = APIRouter()
 
 
-@router.get("/", response_model=list[UserResponse])
-def get_users(service: UserService = Depends(get_user_service)):
-    return service.get_users()
+@router.get("/", response_model=PaginatedUserResponse)
+def get_users(
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
+    role: Optional[str] = None,
+    email: Optional[str] = None,
+    search: Optional[str] = None,
+    service: UserService = Depends(get_user_service),
+):
+    return service.get_users_paginated(
+        page=page,
+        size=size,
+        role=role,
+        email=email,
+        search=search,
+    )
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int, service: UserService = Depends(get_user_service)):
+def get_user(
+    user_id: int, 
+    current_user=Depends(require_authenticated_user),
+    service: UserService = Depends(get_user_service)):
+
+    require_owner_or_admin(current_user, user_id)
+
     return service.get_user(user_id)
 
 
@@ -23,26 +46,41 @@ def create_user(user: UserCreate, service: UserService = Depends(get_user_servic
 
 
 @router.put("/{user_id}", response_model=UserResponse)
-def replace_user(
+def update_user(
     user_id: int,
-    updated_user: UserReplace,
-    service: UserService = Depends(get_user_service)
+    user_update: UserReplace,
+    current_user=Depends(require_authenticated_user),
+    service: UserService = Depends(get_user_service),
 ):
-    return service.replace_user(user_id, updated_user)
+    if user_id != user_update.id:
+        raise HTTPException(
+            status_code=400,
+            detail="Path user_id must match body id",
+        )
 
+    require_owner_or_admin(current_user, user_id)
+
+    return service.replace_user(user_id, user_update)
 
 
 @router.patch("/{user_id}", response_model=UserResponse)
-def update_user(
+def patch_user(
     user_id: int,
-    updates: UserUpdate,
-    service: UserService = Depends(get_user_service)
+    user_update: UserUpdate,
+    current_user=Depends(require_authenticated_user),
+    service: UserService = Depends(get_user_service),
 ):
-    return service.update_user(user_id, updates)
+    require_owner_or_admin(current_user, user_id)
+
+    return service.patch_user(user_id, user_update)
 
 
 @router.delete("/{user_id}", status_code=204)
-def delete_user(user_id: int, service: UserService = Depends(get_user_service)):
+def delete_user(
+    user_id: int, 
+    current_user=Depends(require_admin),
+    service: UserService = Depends(get_user_service),
+    ):
     service.delete_user(user_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

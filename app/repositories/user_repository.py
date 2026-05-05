@@ -44,3 +44,37 @@ class UserRepository:
 
     def refresh(self, user: User) -> None:
         self.db.refresh(user)
+
+    def get_paginated_users(
+        self,
+        skip: int = 0,
+        limit: int = 10,
+        role: str | None = None,
+        email: str | None = None,
+        search: str | None = None,
+    ):
+        query = self.db.query(User)
+
+        if role:
+            query = query.filter(User.role == role)
+
+        if email:
+            query = query.filter(User.email == email)
+
+        if search:
+            search_pattern = f"%{search}%"
+            query = query.filter(
+                (User.name.ilike(search_pattern)) |
+                (User.email.ilike(search_pattern))
+            )
+
+        total = query.count()
+
+        users = (
+            query
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+        return users, total

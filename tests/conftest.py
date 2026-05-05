@@ -14,6 +14,8 @@ from app.main import app
 from app.db.database import Base, get_db
 from app.db.models import User
 
+from app.utils.password import hash_password
+
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -74,10 +76,72 @@ def sample_user(db_session):
         id=1,
         name="Michael",
         email="michael@example.com",
-        password="hashed-password",
+        password=hash_password("strongpassword123"),
         role="user",
     )
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
     return user
+
+import pytest
+
+
+@pytest.fixture
+def admin_user(client):
+    payload = {
+        "id": 100,
+        "name": "Admin User",
+        "email": "admin@example.com",
+        "password": "adminpassword123",
+        "role": "admin",
+    }
+
+    response = client.post("/users/", json=payload)
+    assert response.status_code in (201, 400)
+
+    return payload
+
+
+@pytest.fixture
+def normal_user(client):
+    payload = {
+        "id": 1,
+        "name": "Michael",
+        "email": "michael@example.com",
+        "password": "strongpassword123",
+        "role": "user",
+    }
+
+    response = client.post("/users/", json=payload)
+    assert response.status_code in (201, 400)
+
+    return payload
+
+
+@pytest.fixture
+def admin_token(client, admin_user):
+    response = client.post(
+        "/auth/login-jwt",
+        json={
+            "email": "admin@example.com",
+            "password": "adminpassword123",
+        },
+    )
+
+    assert response.status_code == 200
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def normal_user_token(client, normal_user):
+    response = client.post(
+        "/auth/login-jwt",
+        json={
+            "email": "michael@example.com",
+            "password": "strongpassword123",
+        },
+    )
+
+    assert response.status_code == 200
+    return response.json()["access_token"]
