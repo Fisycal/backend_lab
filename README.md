@@ -69,4 +69,5 @@ Client → Routes → Dependencies → Services → Repositories → Database
 
 ## Author
 
-Backend engineering project focused on production-ready systems.
+Michael Ogunsanya
+Industrial Engineer → Backend & AI Systems Builder
